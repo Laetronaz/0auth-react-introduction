@@ -1,15 +1,23 @@
 import React, { Component } from "react";
 import axios from "axios";
+import SubmitAnswer from "./SubmitAnswer";
+import auth0Client from "../Auth";
 
-export default class Question extends Component {
+class Question extends Component {
   constructor(props) {
     super(props);
     this.state = {
       question: null
     };
+
+    this.submitAnswer = this.submitAnswer.bind(this);
   }
 
   async componentDidMount() {
+    await this.refreshQuestion();
+  }
+
+  async refreshQuestion() {
     const {
       match: { params }
     } = this.props;
@@ -19,6 +27,19 @@ export default class Question extends Component {
     this.setState({
       question
     });
+  }
+
+  async submitAnswer(answer) {
+    await axios.post(
+      `http://localhost:8081/answer/${this.state.question.id}`,
+      {
+        answer
+      },
+      {
+        headers: { Authorization: `Bearer ${auth0Client.getIdToken()}` }
+      }
+    );
+    await this.refreshQuestion();
   }
 
   render() {
@@ -31,6 +52,10 @@ export default class Question extends Component {
             <h1 className="display-3">{question.title}</h1>
             <p className="lead">{question.description}</p>
             <hr className="my-4" />
+            <SubmitAnswer
+              questionId={question.id}
+              submitAnswer={this.submitAnswer}
+            />
             <p>Answers:</p>
             {question.answers.map((answer, idx) => (
               <p className="lead" key={idx}>
@@ -43,3 +68,5 @@ export default class Question extends Component {
     );
   }
 }
+
+export default Question;
